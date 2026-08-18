@@ -38,10 +38,8 @@ function InitialLayout({ fontsReady }: { fontsReady: boolean }) {
     if (identifiedUserId.current === user.id) return;
 
     posthogClient?.identify(user.id, {
-      $set: {
-        email: user.primaryEmailAddress?.emailAddress,
-        name: user.fullName ?? user.firstName,
-      },
+      email: user.primaryEmailAddress?.emailAddress ?? '',
+      name: user.fullName ?? user.firstName ?? '',
     });
     identifiedUserId.current = user.id;
   }, [isLoaded, isSignedIn, isUserLoaded, posthogClient, user]);
