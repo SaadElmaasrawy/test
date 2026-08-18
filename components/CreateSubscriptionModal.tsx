@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { clsx } from "clsx";
 import dayjs from "dayjs";
 import { icons } from "@/constants/icons";
+import { posthog } from "@/lib/posthog";
 
 interface CreateSubscriptionModalProps {
   visible: boolean;
@@ -94,6 +95,14 @@ export default function CreateSubscriptionModal({
     };
 
     onSubmit(newSubscription);
+
+    posthog?.capture("subscription created", {
+      "Subscription Name": newSubscription.name,
+      "Price": newSubscription.price,
+      "Frequency": frequency,
+      "Category": category,
+    });
+
     handleClose();
   };
 

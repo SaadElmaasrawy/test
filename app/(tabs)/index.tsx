@@ -37,12 +37,6 @@ export default function App() {
 
   const handleCreateSubscription = (newSubscription: Subscription) => {
     addSubscription(newSubscription);
-    posthog?.capture("subscription_created", {
-      subscription_name: newSubscription.name,
-      price: newSubscription.price,
-      billing: newSubscription.billing,
-      category: newSubscription.category ?? "Other",
-    });
   };
 
   return (
