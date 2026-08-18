@@ -1,11 +1,17 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useFonts } from "expo-font";
 import { SplashScreen, Stack, useRouter, useSegments } from "expo-router";
-import { ClerkProvider, useAuth } from "@clerk/expo";
+import { ClerkProvider, useAuth, useUser } from "@clerk/expo";
 import { tokenCache } from "@clerk/expo/token-cache";
 import { View, ActivityIndicator } from "react-native";
+import {
+  PostHogErrorBoundary,
+  PostHogProvider,
+  usePostHog,
+} from "posthog-react-native";
 
 import "@/global.css";
+import { posthog } from "@/lib/posthog";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -17,8 +23,28 @@ if (!publishableKey) {
 
 function InitialLayout({ fontsReady }: { fontsReady: boolean }) {
   const { isLoaded, isSignedIn } = useAuth();
+  const { isLoaded: isUserLoaded, user } = useUser();
+  const posthogClient = usePostHog();
+  const identifiedUserId = useRef<string | null>(null);
   const segments = useSegments();
   const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoaded || !isUserLoaded || !isSignedIn || !user?.id) {
+      identifiedUserId.current = null;
+      return;
+    }
+
+    if (identifiedUserId.current === user.id) return;
+
+    posthogClient?.identify(user.id, {
+      $set: {
+        email: user.primaryEmailAddress?.emailAddress,
+        name: user.fullName ?? user.firstName,
+      },
+    });
+    identifiedUserId.current = user.id;
+  }, [isLoaded, isSignedIn, isUserLoaded, posthogClient, user]);
 
   useEffect(() => {
     if (!fontsReady || !isLoaded) return;
@@ -86,9 +112,17 @@ export default function RootLayout() {
     return null;
   }
 
-  return (
+  const content = (
     <ClerkProvider publishableKey={publishableKey!} tokenCache={tokenCache}>
       <InitialLayout fontsReady={fontsReady} />
     </ClerkProvider>
+  );
+
+  return posthog ? (
+    <PostHogProvider client={posthog}>
+      <PostHogErrorBoundary>{content}</PostHogErrorBoundary>
+    </PostHogProvider>
+  ) : (
+    content
   );
 }

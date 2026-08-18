@@ -3,11 +3,13 @@ import { View, Text, TouchableOpacity, Image, Alert, ScrollView } from 'react-na
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth, useUser } from '@clerk/expo';
 import { Ionicons } from '@expo/vector-icons';
+import { usePostHog } from 'posthog-react-native';
 import images from '@/constants/images';
 
 export default function SettingsScreen() {
   const { signOut } = useAuth();
   const { user } = useUser();
+  const posthog = usePostHog();
 
   const handleSignOut = () => {
     Alert.alert(
@@ -19,7 +21,9 @@ export default function SettingsScreen() {
           text: 'Sign Out',
           style: 'destructive',
           onPress: async () => {
+            posthog?.capture('sign_out_completed');
             await signOut();
+            posthog?.reset();
           },
         },
       ]

@@ -15,6 +15,7 @@ import { useSignIn, useAuth } from '@clerk/expo';
 import { Ionicons } from '@expo/vector-icons';
 import AuthHeader from '@/components/AuthHeader';
 import AuthInput from '@/components/AuthInput';
+import { usePostHog } from 'posthog-react-native';
 
 const getErrorMessage = (err: any): string => {
   if (!err) return 'An unexpected error occurred.';
@@ -29,6 +30,7 @@ export default function SignInScreen() {
   const router = useRouter();
   const { signIn } = useSignIn();
   const { isLoaded } = useAuth();
+  const posthog = usePostHog();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -93,6 +95,7 @@ export default function SignInScreen() {
         return;
       }
 
+      posthog?.capture('sign_in_completed');
       router.replace('/(tabs)');
     } catch (err: any) {
       setServerError(getErrorMessage(err));
@@ -183,6 +186,7 @@ export default function SignInScreen() {
         return;
       }
 
+      posthog?.capture('password_reset_completed');
       setResetSuccess(true);
       setTimeout(() => {
         setIsResetOpen(false);
